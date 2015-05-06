@@ -1,0 +1,103 @@
+<# 
+Title:  Software Compliance Check
+Author: Ben Browning
+Date: 1/5/2015
+Version: V.02
+Description: Used to determine software installed on a machine and compare it agaisnt 
+			 the active directory computer account to determine if they are an approved 
+			 computer for the software installation
+			 
+# If software is installed and in ad group         = Machine is Compliant
+# If software is installed and not in the ad group = Machine is not Compliant ?
+# If software is not installed but in the ad group = Machine Requires the Software
+
+#>
+
+$computername = $env:computername
+$computergroups = (Get-ADPrincipalGroupMembership (Get-ADComputer $computername).DistinguishedName).Name
+$match = ""
+$installedkey = ""
+$answer = ""
+
+
+#Gathers list of installed programs from registry into an array for lookup matching
+$COTSInstalledSoftware = Get-ChildItem HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\ | Get-ItemProperty
+$COTSInstalledSoftware += Get-ChildItem HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ | Get-ItemProperty
+IF (Test-path HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\) {$COTSInstalledSoftware += Get-ChildItem HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\ | Get-ItemProperty}
+$installedsoftware =@($CotsInstalledSoftware | Where {$_.DisplayName -ne $Null -AND $_.SystemComponent -ne "1" -AND $_.ParentKeyName -eq $Null} |Select DisplayName).GetEnumerator() | Sort-Object {"$_"}
+# Test case for if software is installed
+
+
+# Checks to see if the machine is compliant or is missing the software
+foreach ($test2 in $computergroups){
+		if ($test2 -like "*SCCM-AppDeploy-VSS*") { 
+			if ($installedsoftware -match "Microsoft Visual SourceSafe 2005 - ENU") 		{write-host "this is compliant vss"}
+			elseif ($installedsoftware -notmatch "Microsoft Visual SourceSafe 2005 - ENU")  {write-host "The software is missing"}
+			}
+			
+		if ($test2 -like "*SCCM-AppDeploy-VmwareWorkstation*") { 
+			if ($installedsoftware -match "VMware Workstation") 							{write-host "this is compliant"}
+			elseif ($installedsoftware -notmatch "VMware Workstation")  					{write-host "The software is missing"}
+			}
+			
+		if ($test2 -like "*SCCM-AppDeploy-Visio*") { 
+			if ($installedsoftware -match "Microsoft Visio Professional 2010") 				{write-host "this is compliant"}
+			elseif ($installedsoftware -notmatch "Microsoft Visio Professional 2010")  		{write-host "The software is missing"}
+			}
+			
+		if ($test2 -like "*SCCM-AppDeploy-Project*") { 
+			if ($installedsoftware -match "Microsoft Project Professional 2010") 			{write-host "this is compliant"}
+			elseif ($installedsoftware -notmatch "Microsoft Project Professional 2010")  	{write-host "The software is missing"}
+			}
+		if ($test2 -like "*SCCM-AppDeploy-MindMap*") { 
+			if ($installedsoftware -match "Mindjet MindManager 14") 						{write-host "this is compliant"}
+			elseif ($installedsoftware -notmatch "Mindjet MindManager 14")  				{write-host "The software is missing"}
+			}
+			
+		if ($test2 -like "*SCCM-AppDeploy-AcrobatPro*") { 
+			if ($installedsoftware -match "Adobe Acrobat XI Pro") 							{write-host "this is compliant"}
+			elseif ($installedsoftware -notmatch "Adobe Acrobat XI Pro")  					{write-host "The software is missing"}
+			}		
+		
+		if ($test2 -like "*SCCM-AppDeploy-Acrobat*") { 
+			if ($installedsoftware -match "Adobe Acrobat XI Standard") 						{write-host "this is compliant"}
+			elseif ($installedsoftware -notmatch "Adobe Acrobat XI Standard")  				{write-host "The software is missing"}
+			}			
+			
+		if ($test2 -like "*SCCM-AppDeploy-AspenEngineeringV8.7*") { 
+			if ($installedsoftware -match "Microsoft Visual SourceSafe 2005 - ENU") 		{write-host "this is compliant"}
+			elseif ($installedsoftware -notmatch "Microsoft Visual SourceSafe 2005 - ENU")  {write-host "The software is missing"}
+			}
+		if ($test2 -like "*SCCM-AppDeploy-AdobeCreativeCloud2015.4*") { 
+			if ($installedsoftware -match "Microsoft Visual SourceSafe 2005 - ENU") 		{write-host "this is compliant"}
+			elseif ($installedsoftware -notmatch "Microsoft Visual SourceSafe 2005 - ENU")  {write-host "The software is missing"}
+			}
+		
+		} # - End of Foreach Loop
+		
+
+# Checks to see if the machine is non-compliant
+	if ($installedsoftware -match "Microsoft Visual SourceSafe 2005 - ENU") {
+		if ($computergroups -notmatch "*SCCM-AppDeploy-VSS*") {echo "Machine is not compliant"} 
+		}
+	
+
+
+
+
+
+
+
+
+
+
+<#
+$smtpServer = "bne-mail04.logicamms.internal"
+$msg = new-object Net.Mail.MailMessage
+$smtp = new-object Net.Mail.SmtpClient($smtpServer)
+$msg.From = "sccm@logicamms.com.au"
+$msg.To.Add("b.browning@logicamms.com.au")
+$msg.subject = "$computername has a breach in software"
+$msg.body = "BLAH"
+$smtp.Send($msg)
+ #>
